@@ -206,7 +206,7 @@ public:
   simdjson_really_inline simdjson_result<value> operator[](const char *key) & noexcept;
 
 protected:
-  simdjson_really_inline document(ondemand::json_iterator &&iter, const uint8_t *json) noexcept;
+  simdjson_really_inline document(ondemand::json_iterator &&iter) noexcept;
   simdjson_really_inline const uint8_t *text(uint32_t idx) const noexcept;
 
   simdjson_really_inline value as_value() noexcept;
@@ -233,7 +233,7 @@ protected:
   // Fields
   //
   json_iterator iter{}; ///< Current position in the document
-  const uint8_t *json{}; ///< JSON for the value in the document (nullptr if value has been consumed)
+  bool _iteration_finished{}; ///< For array iterator
 
   friend struct simdjson_result<document>;
   friend class value;

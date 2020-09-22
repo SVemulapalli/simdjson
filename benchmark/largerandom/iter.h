@@ -77,7 +77,7 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
     sum.y +=  iter.get_double();
     if (!iter.has_next_field() || iter.field_key().value() != "z" || iter.field_value()) { return false; }
     sum.z +=  iter.get_double();
-    if (*iter.advance() != '}') { return false; }
+    if (*iter.next() != '}') { return false; }
     count++;
   } while (iter.has_next_element());
 

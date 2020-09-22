@@ -188,6 +188,7 @@ protected:
   SIMDJSON_WARN_UNUSED simdjson_really_inline bool advance_to_buffer(uint8_t (&buf)[N]) noexcept;
 
   simdjson_really_inline json_iterator_ref borrow() noexcept;
+  simdjson_really_inline void release() noexcept;
 
   friend class document;
   friend class object;
@@ -218,6 +219,7 @@ public:
   simdjson_really_inline void release() noexcept;
 
   simdjson_really_inline json_iterator *operator->() noexcept;
+  simdjson_really_inline const json_iterator *operator->() const noexcept;
   simdjson_really_inline json_iterator &operator*() noexcept;
   simdjson_really_inline const json_iterator &operator*() const noexcept;
 

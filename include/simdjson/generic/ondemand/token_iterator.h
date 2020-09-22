@@ -23,15 +23,23 @@ public:
   simdjson_really_inline token_iterator &operator=(const token_iterator &other) noexcept = delete;
 
   /**
-   * Get the JSON text for a given token (relative).
+   * Advance to the next token, return its text value.
+   */
+  simdjson_really_inline const uint8_t *next() noexcept;
+  /**
+   * Get the current token.
+   */
+  simdjson_really_inline const uint8_t *json() const noexcept;
+  /**
+   * Get the maximum length of the JSON text for the current token.
+   */
+  simdjson_really_inline uint32_t current_length() const noexcept;
+  /**
+   * Get the JSON text for a token besides the current one.
    *
    * This is not null-terminated; it is a view into the JSON.
    *
-   * @param delta The relative position of the token to retrieve. e.g. 0 = current token,
-   *              1 = next token, -1 = prev token.
-   *
-   * TODO consider a string_view, assuming the length will get stripped out by the optimizer when
-   * it isn't used ...
+   * @param delta The relative position of the token to retrieve. -2 = previous token, 0 = next token, -1 = two tokens ahead.
    */
   simdjson_really_inline const uint8_t *peek(int32_t delta=0) const noexcept;
   /**
@@ -39,16 +47,9 @@ public:
    *
    * The length will include any whitespace at the end of the token.
    *
-   * @param delta The relative position of the token to retrieve. e.g. 0 = current token,
-   *              1 = next token, -1 = prev token.
+   * @param delta The relative position of the token to retrieve. -2 = previous token, 0 = next token, -1 = two tokens ahead.
    */
   simdjson_really_inline uint32_t peek_length(int32_t delta=0) const noexcept;
-  /**
-   * Advance to the next token (returning the current one).
-   *
-   * Does not check or update depth/expect_value. Caller is responsible for that.
-   */
-  simdjson_really_inline const uint8_t *advance() noexcept;
 
   // NOTE: we don't support a full C++ iterator interface, because we expect people to make
   // different calls to advance the iterator based on *their own* state.
@@ -61,21 +62,20 @@ public:
   simdjson_really_inline bool operator<=(const token_iterator &other) const noexcept;
 
 protected:
-  simdjson_really_inline token_iterator(const uint8_t *buf, uint32_t *index) noexcept;
+  simdjson_really_inline token_iterator(const uint8_t *buf, uint32_t *next_index) noexcept;
 
   /**
    * Get the index of the JSON text for a given token (relative).
    *
    * This is not null-terminated; it is a view into the JSON.
    *
-   * @param delta The relative position of the token to retrieve. e.g. 0 = current token,
-   *              1 = next token, -1 = prev token.
-   *
+   * @param delta The relative position of the token to retrieve. -2 = previous token, 0 = next token, -1 = two tokens ahead.
    */
   simdjson_really_inline uint32_t peek_index(int32_t delta=0) const noexcept;
 
   const uint8_t *buf{};
-  const uint32_t *index{};
+  const uint32_t *next_index{};
+  const uint8_t *current_json{};
 };
 
 } // namespace ondemand

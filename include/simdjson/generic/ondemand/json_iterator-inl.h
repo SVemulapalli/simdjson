@@ -41,14 +41,14 @@ simdjson_really_inline json_iterator::~json_iterator() noexcept {
 #endif
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_object() noexcept {
-  if (*advance() != '{') { return report_error(INCORRECT_TYPE, "Not an object"); }
+  if (*next() != '{') { return report_error(INCORRECT_TYPE, "Not an object"); }
   return started_object();
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::started_object() noexcept {
   if (*peek() == '}') {
     logger::log_value(*this, "empty object");
-    advance();
+    next();
     return false;
   }
   logger::log_start_value(*this, "object");
@@ -56,7 +56,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::started_object()
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::has_next_field() noexcept {
-  switch (*advance()) {
+  switch (*next()) {
     case '}':
       logger::log_end_value(*this, "object");
       return false;
@@ -72,7 +72,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
   do {
     raw_json_string actual_key;
     SIMDJSON_TRY( get_raw_json_string().get(actual_key) );
-    if (*advance() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
+    if (*next() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
     if (actual_key == key) {
       logger::log_event(*this, "match", key);
       return true;
@@ -87,25 +87,25 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<raw_json_string> json_iterator::field_key() noexcept {
-  const uint8_t *key = advance();
+  const uint8_t *key = next();
   if (*(key++) != '"') { return report_error(TAPE_ERROR, "Object key is not a string"); }
   return raw_json_string(key);
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::field_value() noexcept {
-  if (*advance() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
+  if (*next() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
   return SUCCESS;
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_array() noexcept {
-  if (*advance() != '[') { return report_error(INCORRECT_TYPE, "Not an array"); }
+  if (*next() != '[') { return report_error(INCORRECT_TYPE, "Not an array"); }
   return started_array();
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::started_array() noexcept {
   if (*peek() == ']') {
     logger::log_value(*this, "empty array");
-    advance();
+    next();
     return false;
   }
   logger::log_start_value(*this, "array"); 
@@ -113,7 +113,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::started_array() 
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::has_next_element() noexcept {
-  switch (*advance()) {
+  switch (*next()) {
     case ']':
       logger::log_end_value(*this, "array");
       return false;
@@ -126,23 +126,23 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
 
 SIMDJSON_WARN_UNUSED simdjson_result<raw_json_string> json_iterator::get_raw_json_string() noexcept {
   logger::log_value(*this, "string", "", 0);
-  return raw_json_string(advance()+1);
+  return raw_json_string(next()+1);
 }
 SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::get_uint64() noexcept {
   logger::log_value(*this, "uint64", "", 0);
-  return numberparsing::parse_unsigned(advance());
+  return numberparsing::parse_unsigned(next());
 }
 SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::get_int64() noexcept {
   logger::log_value(*this, "int64", "", 0);
-  return numberparsing::parse_integer(advance());
+  return numberparsing::parse_integer(next());
 }
 SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::get_double() noexcept {
   logger::log_value(*this, "double", "", 0);
-  return numberparsing::parse_double(advance());
+  return numberparsing::parse_double(next());
 }
 SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::get_bool() noexcept {
   logger::log_value(*this, "bool", "", 0);
-  auto json = advance();
+  auto json = next();
   auto not_true = atomparsing::str4ncmp(json, "true");
   auto not_false = atomparsing::str4ncmp(json, "fals") | (json[4] ^ 'e');
   bool error = (not_true && not_false) || jsoncharutils::is_not_structural_or_whitespace(json[not_true ? 5 : 4]);
@@ -153,7 +153,7 @@ simdjson_really_inline bool json_iterator::is_null() noexcept {
   auto json = peek();
   if (!atomparsing::str4ncmp(json, "null")) {
     logger::log_value(*this, "null", "", 0);
-    advance();
+    next();
     return true;
   }
   return false;
@@ -163,7 +163,7 @@ template<int N>
 SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept {
   // Truncate whitespace to fit the buffer.
   auto len = peek_length();
-  auto json = advance();
+  auto json = next();
   if (len > N-1) {
     if (jsoncharutils::is_not_structural_or_whitespace(json[N])) { return false; }
     len = N-1;
@@ -214,7 +214,7 @@ simdjson_really_inline bool json_iterator::root_is_null() noexcept {
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::skip() noexcept {
-  switch (*advance()) {
+  switch (*next()) {
     // PERF TODO does it skip the depth check when we don't decrement depth?
     case '[': case '{':
       logger::log_start_value(*this, "skip");
@@ -229,8 +229,8 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::skip_conta
   uint32_t depth = 1;
   // The loop breaks only when depth-- happens.
   auto end = &parser->dom_parser.structural_indexes[parser->dom_parser.n_structural_indexes];
-  while (index <= end) {
-    uint8_t ch = *advance();
+  while (next_index <= end) {
+    uint8_t ch = *next();
     switch (ch) {
       // TODO consider whether matching braces is a requirement: if non-matching braces indicates
       // *missing* braces, then future lookups are not in the object/arrays they think they are,
@@ -256,11 +256,11 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::skip_conta
 }
 
 simdjson_really_inline bool json_iterator::at_start() const noexcept {
-  return index == parser->dom_parser.structural_indexes.get();
+  return next_index == &parser->dom_parser.structural_indexes[1];
 }
 
 simdjson_really_inline bool json_iterator::at_eof() const noexcept {
-  return index == &parser->dom_parser.structural_indexes[parser->dom_parser.n_structural_indexes];
+  return next_index == &parser->dom_parser.structural_indexes[parser->dom_parser.n_structural_indexes];
 }
 
 simdjson_really_inline bool json_iterator::is_alive() const noexcept {
@@ -350,6 +350,10 @@ simdjson_really_inline void json_iterator_ref::release() noexcept {
 }
 
 simdjson_really_inline json_iterator *json_iterator_ref::operator->() noexcept {
+  assert_is_active();
+  return iter;
+}
+simdjson_really_inline const json_iterator *json_iterator_ref::operator->() const noexcept {
   assert_is_active();
   return iter;
 }

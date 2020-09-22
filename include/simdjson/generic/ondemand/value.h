@@ -210,10 +210,8 @@ public:
 protected:
   /**
    * Create a value.
-   *
-   * Use value::read() instead of this.
    */
-  simdjson_really_inline value(json_iterator_ref &&iter, const uint8_t *json) noexcept;
+  simdjson_really_inline value(json_iterator_ref &&iter) noexcept;
 
   /**
    * Read a value.
@@ -229,6 +227,15 @@ protected:
    */
   simdjson_really_inline void skip() noexcept;
 
+  /**
+   * Get the current JSON token, releasing the iterator (i.e. we can't use it anymore).
+   */
+  simdjson_really_inline const uint8_t *consume() noexcept;
+  /**
+   * Get the current JSON token.
+   */
+  simdjson_really_inline const uint8_t *json() const noexcept;
+
   simdjson_really_inline void log_value(const char *type) const noexcept;
   simdjson_really_inline void log_error(const char *message) const noexcept;
 
@@ -241,7 +248,6 @@ protected:
   simdjson_really_inline void iteration_finished() noexcept;
 
   json_iterator_ref iter{};
-  const uint8_t *json{}; // The JSON text of the value
 
   friend class document;
   template<typename T> friend class array_iterator;
